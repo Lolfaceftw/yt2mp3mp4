@@ -12,14 +12,14 @@ class GUI:
         Initializes the GUI window.
         """
         # Info
-        self.version = '1.0'
+        self.version = '1.0.1'
         # Initializes the window.
         self.window = tk.Tk()
         self.window.title(f"Youtube to MP3/MP4 V{self.version}")
         self.window.minsize(550, 200)
 
         # Boolean variables
-        self.is_vid = BooleanVar(value=True)
+        self.is_vid = True
         self.is_mp3 = BooleanVar(value=True)
 
         # Labels
@@ -34,8 +34,6 @@ class GUI:
         self.in_directory = tk.Entry(self.window, width=40)
 
         # Radio Buttons
-        self.video_butt = tk.Radiobutton(self.window, text="Video", variable=self.is_vid, value=True, font=('Helvetica', 12, 'bold'))
-        self.ps_butt = tk.Radiobutton(self.window, text="Playlist", variable=self.is_vid, value=False, font=('Helvetica', 12, 'bold'))
         self.mp3_butt = tk.Radiobutton(self.window, text="MP3", variable=self.is_mp3, value = True, font=('Helvetica', 12, 'bold'))
         self.mp4_butt = tk.Radiobutton(self.window, text="MP4", variable=self.is_mp3, value = False, font=('Helvetica', 12, 'bold'))
 
@@ -52,34 +50,34 @@ class GUI:
         self.in_link.grid(row=0, column=1, padx=5, pady=5)
 
         # Row 1
-        self.video_butt.grid(row=1, column=0, padx=5, pady=5)
-        self.ps_butt.grid(row=1, column=1, padx=5, pady=5)
+        self.selection.grid(row=1, columnspan=2, padx=5, pady=5)
 
         # Row 2
-        self.selection.grid(row=2, columnspan=2, padx=5, pady=5)
+        self.mp3_butt.grid(row=2, column=0, padx=5, pady=5)
+        self.mp4_butt.grid(row=2, column=1, padx=5, pady=5)
 
         # Row 3
-        self.mp3_butt.grid(row=3, column=0, padx=5, pady=5)
-        self.mp4_butt.grid(row=3, column=1, padx=5, pady=5)
+        self.directory.grid(row=3, columnspan=2, padx=5,pady=5)
 
         # Row 4
-        self.directory.grid(row=4, columnspan=2, padx=5,pady=5)
+        self.browse.grid(row=4,column=0)
+        self.in_directory.grid(row=4,column=1)
 
         # Row 5
-        self.browse.grid(row=5,column=0)
-        self.in_directory.grid(row=5,column=1)
+        self.convert.grid(row=5,columnspan=2,padx=5,pady=5)
 
         # Row 6
-        self.convert.grid(row=6,columnspan=2,padx=5,pady=5)
+        self.pb.grid(row=6,column=0,padx=5,pady=5)
+        self.status_text.grid(row=6,column=1,padx=1,pady=1)
 
         # Row 7
-        self.pb.grid(row=7,column=0,padx=5,pady=5)
-        self.status_text.grid(row=7,column=1,padx=1,pady=1)
-
-        # Row 8
-        self.download_status.grid(row=8,columnspan=2,pady=1)
+        self.download_status.grid(row=7,columnspan=2,pady=1)
 
     def convert_now(self):
+        if 'list' in self.in_link.get():
+            self.is_vid = False
+        else: 
+            self.is_vid = True
         # Start the progress bar.
         self.pb.start()
         self.status_text.config(text="Converting...")
@@ -87,7 +85,7 @@ class GUI:
 
         # Capture directory
         directory = self.in_directory.get()
-        if self.is_vid.get():
+        if self.is_vid:
             try:
                 yt_link = YouTube(self.in_link.get())
             except Exception as e:
