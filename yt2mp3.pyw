@@ -12,7 +12,7 @@ class GUI:
         Initializes the GUI window.
         """
         # Info
-        self.version = '1.0.2'
+        self.version = '1.1.0'
         # Initializes the window.
         self.window = tk.Tk()
         self.window.title(f"Youtube to MP3/MP4 V{self.version}")
@@ -27,7 +27,7 @@ class GUI:
         self.selection = tk.Label(self.window, text="Preferred Output", font=('Helvetica', 12, 'bold'))
         self.directory = tk.Label(self.window, text="Directory", font=('Helvetica', 12, 'bold'))
         self.status_text = tk.Label(self.window, text="Idle", font=('Helvetica', 12, 'bold'))
-        self.download_status = tk.Label(self.window, font=('Helvetica', 10))
+        self.download_status = tk.Label(self.window, font=('Helvetica', 10), wraplength=90)
 
         # Text boxes
         self.in_link = tk.Entry(self.window, width=40)
@@ -39,7 +39,7 @@ class GUI:
 
         # Normal Buttons
         self.browse = tk.Button(self.window, text="Browse", command=self.get_dir, font=('Helvetica', 12, 'bold'))
-        self.convert = tk.Button(self.window, text="Convert", command = self.convert_now, font=('Helvetica', 12, 'bold'))
+        self.convert = tk.Button(self.window, text="Convert", command = self.start_convert, font=('Helvetica', 12, 'bold'))
 
         # Progress Bar
         self.pb = ttk.Progressbar(self.window, orient="horizontal", mode='indeterminate', length=250)
@@ -73,81 +73,150 @@ class GUI:
         # Row 7
         self.download_status.grid(row=7,columnspan=2,pady=1)
 
-    def convert_now(self):
+    def start_convert(self):
+        """
+        Starts the conversion process thread.
+        """
+        self.check_in_link()
+        Thread(target=self.convert_now).start()
+
+    def check_in_link(self):
+        """
+        Checks the input link whether it is under a playlist or not.
+        """
         if 'list' in self.in_link.get():
             self.is_vid = False
         else: 
             self.is_vid = True
+
+    def change_widgets(self, mode: str) -> None:
+        """
+        Enables/disables the necessary widgets while converting.
+        Args:
+            mode (str): Takes in either the arguments 'on' or 'off' to state the mode of the widgets.
+        """
+        try:
+            if mode == 'on':
+                state = 'normal'
+            elif mode == 'off':
+                state = 'disabled'
+            else: raise ValueError
+        except ValueError:
+            messagebox.showerror(f'change_widgets() only takes in either on or off as arguments!')
+
+        to_change_state = [self.in_link, self.in_directory, self.mp3_butt, self.mp4_butt, self.browse, self.convert]
+        for variables in to_change_state:
+            variables.config(state=state)
+
+    def get_input_link(self):
+        """
+        Gets the input link data. Returns a Youtube or Playlist object.
+        """
+        try:
+            if self.is_vid:
+                return YouTube(self.in_link.get())
+            else:
+                return Playlist(self.in_link.get())
+        except Exception as e:
+            messagebox.showerror("Link Error!", str(e))
+
+    def download_status_update(self, state: int, string: str):
+        """
+        Prints the download status of the specific video or audio file.
+
+        Args:
+            state (int): 0 - downloading; 1 - downloaded; 2 - file exists
+            string (str): title/directory of the video or audio file.
+        """
+        try:
+            if state == 0:
+                self.download_status.config(text=f'Downloading {string}')
+            elif state == 1:
+                self.download_status.config(text=f'Downloaded @ {string}')
+            elif state == 2:
+                self.download_status.config(text=f'File exists @ {string}')
+            else: 
+                raise ValueError
+        except ValueError:
+            print('download_status_update() only takes in 0-2 for the state!')
+
+    def download_file(self, streams_object: str, directory: str, mode: str):
+        """
+        Downloads the stream object file and saves it.
+
+        Args:
+            streams_object (YouTube/Playlist): Streams object from Pytube either YouTube or Playlist
+            directory (str): Directory where the file will be saved.
+            mode (str): Accepts 'mp3' or 'mp4'
+        """
+        # Check if file exists before downloading
+        to_check = f'{directory}\\{streams_object.title}{mode}'
+        if os.path.isfile(to_check):
+            self.download_status_update(2, streams_object.title)
+        else:
+            self.download_status_update(0, streams_object.title)
+            temp = streams_object.download(output_path=directory)
+            base, _ = os.path.splitext(temp)
+            output = base + '.' + mode
+            if mode == 'mp3': 
+                os.rename(temp, output)
+            self.download_status_update(1, output)
+    
+    def convert_now(self):
+        """
+        Converts the YouTube link provided into either MP3 or MP4.
+        """
         # Start the progress bar.
         self.pb.start()
+
+        # Adjust initial window.
         self.status_text.config(text="Converting...")
-        self.window.minsize(550, 325)
+        self.change_widgets('off')
 
         # Capture directory
         directory = self.in_directory.get()
-        if self.is_vid:
-            try:
-                yt_link = YouTube(self.in_link.get())
-            except Exception as e:
-                messagebox.showerror("Link Error!", str(e))
         
+        if self.is_vid:
+            yt_link = self.get_input_link()
             try:
                 if self.is_mp3.get():
-                    x = yt_link.streams.filter(adaptive=True, only_audio=True).order_by('abr').desc().first().download(output_path=directory)
-                    base, _ = os.path.splitext(x)
-                    new = base + '.mp3'
-                    if not os.path.isfile(new):
-                        self.download_status.config(text=f'Downloaded @ {new}')
-                        os.rename(x, new)
-                    else:
-                        self.download_status.config(text=f'File exists @ {new}')
+                    streams_object_mp3 = yt_link.streams.filter(adaptive=True, only_audio=True).order_by('abr').desc().first()
+                    self.download_file(streams_object_mp3, directory, 'mp3')
                     self.window.update()
                 else:
-                    download_location = yt_link.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').desc().first().download(output_path=directory)
-                    if not os.path.isfile(download_location):
-                        self.download_status.config(text=f'Downloaded @ {download_location}')
-                    else:
-                        self.download_status.config(text=f'Downloaded @ {download_location}')
+                    streams_object_mp4 = yt_link.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').desc().first()
+                    self.download_file(streams_object_mp4, directory, 'mp4')
                     self.window.update()
             except Exception as e:
                 print(str(e))
                 messagebox.showerror("YT Streams Error!", str(e))
         else:
-            try:
-                playlist_link = Playlist(self.in_link.get())
-            except Exception as e:
-                messagebox.showerror("Link Error!", str(e))
+            playlist_link = self.get_input_link()
             try:
                 if self.is_mp3.get():
                     for audio in playlist_link.videos:
-                        y = audio.streams.filter(adaptive=True, only_audio=True).order_by('abr').desc().first().download(output_path=directory)
-                        base, _ = os.path.splitext(y)
-                        new = base + '.mp3'
-                        if not os.path.isfile(new):
-                            self.download_status.config(text=f'Downloaded @ {new}')
-                            os.rename(y, new)
-                        else:
-                            self.download_status.config(text=f'File exists @ {new}')
+                        playlist_object_mp3 = audio.streams.filter(adaptive=True, only_audio=True).order_by('abr').desc().first()
+                        self.download_file(playlist_object_mp3, directory, 'mp3')
                         self.window.update()
                 else:
                     for video in playlist_link.videos:
-                        dl_loc = video.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').download(output_path=directory)
-                        if not os.path.isfile(dl_loc):
-                            self.download_status.config(text=f'Downloaded @ {dl_loc}')
-                        else:
-                            self.download_status.config(text=f'File exists @ {dl_loc}')
+                        playlist_object_mp4 = video.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').desc().first()
+                        self.download_file(playlist_object_mp4, directory, 'mp4')
                         self.window.update()
             except Exception as e:
                 messagebox.showerror("YT Streams Error!", str(e))
+
+        # Done
+        self.change_widgets('on')
+
+        # Start timer for status deletion.
         Thread(target=self.reset_dl_status).start()
-        self.window.minsize(550, 250)
         webbrowser.open(os.path.realpath(directory))
-        
         self.status_text.config(text="Done!")
         self.pb.stop()
 
     def reset_dl_status(self):
-        time.sleep(2)
+        time.sleep(5)
         self.download_status.config(text='')
 
     def get_dir(self):
@@ -160,5 +229,6 @@ class GUI:
         self.window.resizable(False, False)
         self.window.deiconify()
         self.window.mainloop()
+
 if __name__ == '__main__':
     GUI().run()
