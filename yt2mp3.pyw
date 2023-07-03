@@ -15,11 +15,15 @@ class GUI:
         Initializes the GUI window.
         """
         # Info
-        self.version = '1.1.1'
+        self.version = '1.2.0'
         # Initializes the window.
         self.window = tk.Tk()
         self.window.title(f"Youtube to MP3/MP4 V{self.version}")
         self.window.minsize(550, 200)
+
+        # To trace
+        self.in_link_entry = tk.StringVar()
+        self.photo = None
 
         # Boolean variables
         self.is_vid = True
@@ -31,9 +35,11 @@ class GUI:
         self.directory = tk.Label(self.window, text="Directory", font=('Helvetica', 12, 'bold'))
         self.status_text = tk.Label(self.window, text="Idle", font=('Helvetica', 12, 'bold'))
         self.download_status = tk.Label(self.window, font=('Helvetica', 10), wraplength=250)
+        self.video_title = tk.Label(self.window, text="YouTube Video Title", font=('Helvetica', 12, 'bold'))
+        self.file_size = tk.Label(self.window, font=('Helvetica', 12, 'bold'))
 
         # Text boxes
-        self.in_link = tk.Entry(self.window, width=40)
+        self.in_link = tk.Entry(self.window, textvariable=self.in_link_entry, width=40)
         self.in_directory = tk.Entry(self.window, width=40)
 
         # Radio Buttons
@@ -47,13 +53,18 @@ class GUI:
         # Progress Bar
         self.pb = ttk.Progressbar(self.window, orient="horizontal", mode='indeterminate', length=250)
 
+        # Canvas Image
+        self.thumbnail = tk.Canvas(self.window, width=400, height=200)
+
         #* Grid Settings
         # Row 0
         self.link.grid(row=0, column=0, padx=5, pady=5)
         self.in_link.grid(row=0, column=1, padx=5, pady=5)
+        self.video_title.grid(row=0, column=2, padx=5, pady=5)
 
         # Row 1
         self.selection.grid(row=1, columnspan=2, padx=5, pady=5)
+        self.thumbnail.grid(row=1, column=2, rowspan=3, padx=5, pady=5)
 
         # Row 2
         self.mp3_butt.grid(row=2, column=0, padx=5, pady=5)
@@ -65,6 +76,7 @@ class GUI:
         # Row 4
         self.browse.grid(row=4,column=0)
         self.in_directory.grid(row=4,column=1)
+        self.file_size.grid(row=4, column=2)
 
         # Row 5
         self.convert.grid(row=5,columnspan=2,padx=5,pady=5)
@@ -76,11 +88,76 @@ class GUI:
         # Row 7
         self.download_status.grid(row=7,columnspan=2,pady=1)
 
+        # Initial threads
+        self.in_link_entry.trace_add('write', callback=self.start_wait_link_thread)
+
+    def get_thumbnail(self, yt_object):
+        """
+        Gets the thumbnail of the YouTube video.
+
+        Args:
+            yt_object (YouTube/Playlist): YouTube or Playlist object from Pytube.
+        """
+        open_url = urllib.request.urlopen(yt_object.thumbnail_url)
+        raw_data = open_url.read()
+
+
+        im = Image.open(BytesIO(raw_data))
+        im = im.resize((400, 200))
+        return ImageTk.PhotoImage(im)
+
+    def start_wait_link_thread(self, *args):
+        """
+        Starts the thread for capturing events in the entry for YouTube links.
+        """
+        Thread(target=self.wait_link, args=(self.get_input_link(),)).start()
+
+    def get_file_size(self, link, mode: str):
+        """
+        Returns the file size of both MP3 and MP4 of the video.
+
+        Args:
+            object (YouTube/Playlist): YouTube or Playlist object from pytube.
+            mode (str): mp3 or mp4
+        """
+        try:
+            if mode == 'mp3':
+                return round(int(self.object_filter(link, mode).filesize) / 1000000, 2)
+            elif mode == 'mp4':
+                return round(int(self.object_filter(link, mode).filesize) / 1000000, 2)
+            else: raise ValueError
+        except ValueError:
+            messagebox.showerror("get_file_size() only accepts mp3 or mp4 as arguments for the mode.")
+
+    def reset_video_info_panel(self):
+        """
+        Resets the video info panel widgets.
+        """
+        self.video_title.config(text="YouTube Video Title")
+        self.photo = None
+        self.file_size.config(text = '')
+        self.thumbnail.delete('all')
+
+    def wait_link(self, youtube_object):
+        """
+        Updates the video panel with the video's title, thumbnail, and file size.
+
+        Args:
+            youtube_object (YouTube/Playlist): YouTube or Playlist object from pytube.
+        """
+        try:
+            self.video_title.config(text=youtube_object.streams[0].title)
+            self.photo = self.get_thumbnail(youtube_object)
+            self.thumbnail.create_image(1, 1, image=self.photo, anchor='nw')
+            self.file_size.config(text=f"Filesize: {self.get_file_size(youtube_object, 'mp3')}MB (MP3) and {self.get_file_size(youtube_object, 'mp4')}MB (MP4)")
+
+        except:
+            self.reset_video_info_panel()
+
     def start_convert(self):
         """
         Starts the conversion process thread.
         """
-        self.check_in_link()
         Thread(target=self.convert_now).start()
 
     def check_in_link(self):
@@ -115,13 +192,14 @@ class GUI:
         """
         Gets the input link data. Returns a Youtube or Playlist object.
         """
+        self.check_in_link()
         try:
+            
             if self.is_vid:
                 return YouTube(self.in_link.get())
             else:
                 return Playlist(self.in_link.get())
-        except Exception as e:
-            messagebox.showerror("Link Error!", str(e))
+        except: pass
 
     def download_status_update(self, state: int, string: str):
         """
@@ -166,6 +244,23 @@ class GUI:
                 os.rename(temp, output)
             self.download_status_update(1, output)
 
+    def object_filter(self, link, mode: str) -> None:
+        """
+        Returns the filtered object.
+
+        Args:
+            link (Youtube/Playlist): YouTube or Playlist object from link. 
+            mode (str): mp4 or mp3.
+        """
+        try:
+            if mode == 'mp3':
+                return link.streams.filter(adaptive=True, only_audio=True).order_by('abr').desc().first()
+            elif mode == 'mp4':
+                return link.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').desc().first()
+            else: raise ValueError
+        except ValueError:
+            messagebox.showerror("Value Error!", "object_filter() takes in only mp3 or mp4 for the mode.")
+
     def start_download(self, link, type: str, directory: str, is_mp3: bool):
         """
         Starts the download process of the YouTube video or playlist.
@@ -181,25 +276,15 @@ class GUI:
 
         try:
             if type == 'vid':
-                if mode == 'mp3':
-                    streams_object_mp3 = link.streams.filter(adaptive=True, only_audio=True).order_by('abr').desc().first()
-                    self.download_file(streams_object_mp3, directory, 'mp3')
-                    self.window.update()
-                elif mode == 'mp4':
-                    streams_object_mp4 = link.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').desc().first()
-                    self.download_file(streams_object_mp4, directory, 'mp4')
-                    self.window.update()
+                streams_object_mp3 = self.object_filter(link, mode)
+                self.download_file(streams_object_mp3, directory, mode)
+                self.window.update()
             elif type == 'playlist':
-                if mode == 'mp3':
-                    for audio in link.videos:
-                        playlist_object_mp3 = audio.streams.filter(adaptive=True, only_audio=True).order_by('abr').desc().first()
-                        self.download_file(playlist_object_mp3, directory, 'mp3')
-                        self.window.update()
-                elif mode == 'mp4':
-                    for video in link.videos:
-                        playlist_object_mp4 = video.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').desc().first()
-                        self.download_file(playlist_object_mp4, directory, 'mp4')
-                        self.window.update()
+                for video in link.videos:
+                    playlist_object_mp3 = self.object_filter(video, mode)
+                    Thread(target=self.wait_link, args=(video,)).start()
+                    self.download_file(playlist_object_mp3, directory, 'mp3')
+                    self.window.update()
 
         except Exception as e:
             messagebox.showerror("YT Streams Error!", str(e))
@@ -234,19 +319,27 @@ class GUI:
         self.pb.stop()
 
     def reset_dl_status(self):
+        """
+        Resets the download status.
+        """
         time.sleep(5)
         self.download_status.config(text='')
         self.status_text.config(text = 'Idle')
 
     def get_dir(self):
+        """
+        Asks for the directory. This will be used as a location to save the MP3 or MP4 files.
+        """
         self.in_directory.delete('0', tk.END)
         file_location = filedialog.askdirectory()
         self.in_directory.insert(0, file_location)
         return file_location
 
     def run(self):
+        """
+        Runs the main window.
+        """
         self.window.resizable(False, False)
-        self.window.deiconify()
         self.window.mainloop()
 
 if __name__ == '__main__':
