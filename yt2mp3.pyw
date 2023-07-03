@@ -15,7 +15,7 @@ class GUI:
         Initializes the GUI window.
         """
         # Info
-        self.version = '1.1.0'
+        self.version = '1.1.1'
         # Initializes the window.
         self.window = tk.Tk()
         self.window.title(f"Youtube to MP3/MP4 V{self.version}")
