@@ -2,6 +2,9 @@ from pytube import YouTube
 from pytube import Playlist
 from tkinter import filedialog, BooleanVar, ttk, messagebox
 from threading import Thread
+from PIL import Image, ImageTk
+from io import BytesIO
+import urllib.request
 import time
 import tkinter as tk
 import os, webbrowser
@@ -27,7 +30,7 @@ class GUI:
         self.selection = tk.Label(self.window, text="Preferred Output", font=('Helvetica', 12, 'bold'))
         self.directory = tk.Label(self.window, text="Directory", font=('Helvetica', 12, 'bold'))
         self.status_text = tk.Label(self.window, text="Idle", font=('Helvetica', 12, 'bold'))
-        self.download_status = tk.Label(self.window, font=('Helvetica', 10), wraplength=90)
+        self.download_status = tk.Label(self.window, font=('Helvetica', 10), wraplength=250)
 
         # Text boxes
         self.in_link = tk.Entry(self.window, width=40)
@@ -150,7 +153,8 @@ class GUI:
             mode (str): Accepts 'mp3' or 'mp4'
         """
         # Check if file exists before downloading
-        to_check = f'{directory}\\{streams_object.title}{mode}'
+        to_check = f'{directory}\\{streams_object.title}.{mode}'
+        print(to_check, "exists", os.path.isfile(to_check))
         if os.path.isfile(to_check):
             self.download_status_update(2, streams_object.title)
         else:
@@ -161,7 +165,44 @@ class GUI:
             if mode == 'mp3': 
                 os.rename(temp, output)
             self.download_status_update(1, output)
-    
+
+    def start_download(self, link, type: str, directory: str, is_mp3: bool):
+        """
+        Starts the download process of the YouTube video or playlist.
+
+        Args:
+            link (Youtube/Playlist): YouTube or Playlist Object from link.
+            type (str): Accepts either 'vid' or 'playlist'.
+            directory (str): The directory to save.
+            is_mp3 (bool): Checks if the object will be converted to mp3 or mp4.
+        """
+        if is_mp3: mode = 'mp3'
+        else: mode = 'mp4'
+
+        try:
+            if type == 'vid':
+                if mode == 'mp3':
+                    streams_object_mp3 = link.streams.filter(adaptive=True, only_audio=True).order_by('abr').desc().first()
+                    self.download_file(streams_object_mp3, directory, 'mp3')
+                    self.window.update()
+                elif mode == 'mp4':
+                    streams_object_mp4 = link.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').desc().first()
+                    self.download_file(streams_object_mp4, directory, 'mp4')
+                    self.window.update()
+            elif type == 'playlist':
+                if mode == 'mp3':
+                    for audio in link.videos:
+                        playlist_object_mp3 = audio.streams.filter(adaptive=True, only_audio=True).order_by('abr').desc().first()
+                        self.download_file(playlist_object_mp3, directory, 'mp3')
+                        self.window.update()
+                elif mode == 'mp4':
+                    for video in link.videos:
+                        playlist_object_mp4 = video.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').desc().first()
+                        self.download_file(playlist_object_mp4, directory, 'mp4')
+                        self.window.update()
+
+        except Exception as e:
+            messagebox.showerror("YT Streams Error!", str(e))
     def convert_now(self):
         """
         Converts the YouTube link provided into either MP3 or MP4.
@@ -178,33 +219,10 @@ class GUI:
         
         if self.is_vid:
             yt_link = self.get_input_link()
-            try:
-                if self.is_mp3.get():
-                    streams_object_mp3 = yt_link.streams.filter(adaptive=True, only_audio=True).order_by('abr').desc().first()
-                    self.download_file(streams_object_mp3, directory, 'mp3')
-                    self.window.update()
-                else:
-                    streams_object_mp4 = yt_link.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').desc().first()
-                    self.download_file(streams_object_mp4, directory, 'mp4')
-                    self.window.update()
-            except Exception as e:
-                print(str(e))
-                messagebox.showerror("YT Streams Error!", str(e))
+            self.start_download(yt_link, 'vid', directory, self.is_mp3.get())
         else:
             playlist_link = self.get_input_link()
-            try:
-                if self.is_mp3.get():
-                    for audio in playlist_link.videos:
-                        playlist_object_mp3 = audio.streams.filter(adaptive=True, only_audio=True).order_by('abr').desc().first()
-                        self.download_file(playlist_object_mp3, directory, 'mp3')
-                        self.window.update()
-                else:
-                    for video in playlist_link.videos:
-                        playlist_object_mp4 = video.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').desc().first()
-                        self.download_file(playlist_object_mp4, directory, 'mp4')
-                        self.window.update()
-            except Exception as e:
-                messagebox.showerror("YT Streams Error!", str(e))
+            self.start_download(playlist_link, 'playlist', directory, self.is_mp3.get())
 
         # Done
         self.change_widgets('on')
@@ -218,6 +236,7 @@ class GUI:
     def reset_dl_status(self):
         time.sleep(5)
         self.download_status.config(text='')
+        self.status_text.config(text = 'Idle')
 
     def get_dir(self):
         self.in_directory.delete('0', tk.END)
