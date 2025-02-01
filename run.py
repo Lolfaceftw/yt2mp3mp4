@@ -1,13 +1,15 @@
 import sys
 import importlib.util
 import subprocess
-import os
+import time
 
-req_modules = ['tkinter', 'pytube', 'threading', 'time', 'os', 'webbrowser']
+
+# TODO: Replace pytube dependency with yt-dlp
+req_modules = ['tkinter', 'yt-dlp', 'threading', 'time', 'os', 'webbrowser']
 missing_modules = []
 
 if sys.version_info < (3, 10):
-    print(f"Python version 3.10 is required to run p2p-chat.Your version is {sys.version}. Please update accordingly.")
+    print(f"Python version 3.10 is required to run yt2mp3mp4.Your version is {sys.version}. Please update accordingly.")
 else:
     for module in req_modules:
         if not module in sys.modules and importlib.util.find_spec(module) == None:
@@ -24,7 +26,7 @@ else:
         if install == 'y' or install == 'Y':
             for module in missing_modules:
                 try:
-                    pip = subprocess.Popen([sys.executable, '-m', 'pip', 'install', 'module'])
+                    pip = subprocess.Popen([sys.executable, '-m', 'pip3', 'install', 'module'])
                     pip.wait()
                 except Exception as e:
                     pass
@@ -37,7 +39,7 @@ else:
 if missing_modules:
     print("Install these modules manually:")
     for module in missing_modules: print(module)
-    os.sys('pause')
+    input("Press <ENTER> key to continue...")
 else:
     import yt2mp3
     yt2mp3.GUI().run()
