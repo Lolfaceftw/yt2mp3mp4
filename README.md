@@ -12,4 +12,3 @@ To install, directly download the repository using git clone.
 ```batch
 python run.py
 ```
-

@@ -15,7 +15,7 @@ class GUI:
         Initializes the GUI window.
         """
         # Info
-        self.version = '1.2.0'
+        self.version = '2.0'
         # Initializes the window.
         self.window = tk.Tk()
         self.window.title(f"Youtube to MP3/MP4 V{self.version}")
@@ -35,7 +35,7 @@ class GUI:
         self.directory = tk.Label(self.window, text="Directory", font=('Helvetica', 12, 'bold'))
         self.status_text = tk.Label(self.window, text="Idle", font=('Helvetica', 12, 'bold'))
         self.download_status = tk.Label(self.window, font=('Helvetica', 10), wraplength=250)
-        self.video_title = tk.Label(self.window, text="YouTube Video Title", font=('Helvetica', 12, 'bold'))
+        self.video_title = tk.Label(self.window, text="", font=('Helvetica', 12, 'bold'))
         self.file_size = tk.Label(self.window, font=('Helvetica', 12, 'bold'))
 
         # Text boxes
