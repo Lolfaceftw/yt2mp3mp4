@@ -133,7 +133,7 @@ class GUI:
         """
         Resets the video info panel widgets.
         """
-        self.video_title.config(text="YouTube Video Title")
+        self.video_title.config(text="")
         self.photo = None
         self.file_size.config(text = '')
         self.thumbnail.delete('all')
