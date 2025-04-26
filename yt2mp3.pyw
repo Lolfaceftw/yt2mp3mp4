@@ -1,13 +1,13 @@
-from pytube import YouTube
-from pytube import Playlist
 from tkinter import filedialog, BooleanVar, ttk, messagebox
 from threading import Thread
 from PIL import Image, ImageTk
 from io import BytesIO
+import yt_dlp
 import urllib.request
 import time
 import tkinter as tk
 import os, webbrowser
+import validators
 
 class GUI:
     def __init__(self) -> None:
@@ -15,7 +15,7 @@ class GUI:
         Initializes the GUI window.
         """
         # Info
-        self.version = '2.0'
+        self.version = '2.1.0'
         # Initializes the window.
         self.window = tk.Tk()
         self.window.title(f"Youtube to MP3/MP4 V{self.version}")
@@ -24,9 +24,10 @@ class GUI:
         # To trace
         self.in_link_entry = tk.StringVar()
         self.photo = None
+        self.current_info = None
 
         # Boolean variables
-        self.is_vid = True
+        #self.is_vid = True
         self.is_mp3 = BooleanVar(value=True)
 
         # Labels
@@ -36,7 +37,7 @@ class GUI:
         self.status_text = tk.Label(self.window, text="Idle", font=('Helvetica', 12, 'bold'))
         self.download_status = tk.Label(self.window, font=('Helvetica', 10), wraplength=250)
         self.video_title = tk.Label(self.window, text="", font=('Helvetica', 12, 'bold'))
-        self.file_size = tk.Label(self.window, font=('Helvetica', 12, 'bold'))
+        # self.file_size = tk.Label(self.window, font=('Helvetica', 12, 'bold'))
 
         # Text boxes
         self.in_link = tk.Entry(self.window, textvariable=self.in_link_entry, width=40)
@@ -91,43 +92,50 @@ class GUI:
         # Initial threads
         self.in_link_entry.trace_add('write', callback=self.start_wait_link_thread)
 
-    def get_thumbnail(self, yt_object):
+    def get_thumbnail(self, thumbnail_url: str) -> ImageTk.PhotoImage:
         """
         Gets the thumbnail of the YouTube video.
 
         Args:
-            yt_object (YouTube/Playlist): YouTube or Playlist object from Pytube.
+            thumbnail_url (str): The YouTube URL that we will obtain the thumbnail.
+        
+        Returns:
+            thumbnail (ImageTk.PhotoImage): The thumbnail image.
         """
-        open_url = urllib.request.urlopen(yt_object.thumbnail_url)
-        raw_data = open_url.read()
+        try:
+            open_url = urllib.request.urlopen(thumbnail_url)
+            raw_data = open_url.read()
 
 
-        im = Image.open(BytesIO(raw_data))
-        im = im.resize((400, 200))
-        return ImageTk.PhotoImage(im)
-
+            im = Image.open(BytesIO(raw_data))
+            im = im.resize((400, 200))
+            thumbnail = ImageTk.PhotoImage(im)
+            return thumbnail
+        except Exception as e:
+            messagebox.showerror(f"Error Processing Thumbnail! {e}")
+        
     def start_wait_link_thread(self, *args):
         """
         Starts the thread for capturing events in the entry for YouTube links.
         """
-        Thread(target=self.wait_link, args=(self.get_input_link(),)).start()
+        Thread(target=self.wait_link, args=(self.in_link_entry.get(),)).start()
 
-    def get_file_size(self, link, mode: str):
-        """
-        Returns the file size of both MP3 and MP4 of the video.
+    # def get_file_size(self, link, mode: str):
+    #     """
+    #     Returns the file size of both MP3 and MP4 of the video.
 
-        Args:
-            object (YouTube/Playlist): YouTube or Playlist object from pytube.
-            mode (str): mp3 or mp4
-        """
-        try:
-            if mode == 'mp3':
-                return round(int(self.object_filter(link, mode).filesize) / 1000000, 2)
-            elif mode == 'mp4':
-                return round(int(self.object_filter(link, mode).filesize) / 1000000, 2)
-            else: raise ValueError
-        except ValueError:
-            messagebox.showerror("get_file_size() only accepts mp3 or mp4 as arguments for the mode.")
+    #     Args:
+    #         object (YouTube/Playlist): YouTube or Playlist object from pytube.
+    #         mode (str): mp3 or mp4
+    #     """
+    #     try:
+    #         if mode == 'mp3':
+    #             return round(int(self.object_filter(link, mode).filesize) / 1000000, 2)
+    #         elif mode == 'mp4':
+    #             return round(int(self.object_filter(link, mode).filesize) / 1000000, 2)
+    #         else: raise ValueError
+    #     except ValueError:
+    #         messagebox.showerror("get_file_size() only accepts mp3 or mp4 as arguments for the mode.")
 
     def reset_video_info_panel(self):
         """
@@ -135,25 +143,53 @@ class GUI:
         """
         self.video_title.config(text="")
         self.photo = None
-        self.file_size.config(text = '')
+        # self.file_size.config(text = '')
         self.thumbnail.delete('all')
+        self.current_info = None
 
-    def wait_link(self, youtube_object):
+    def wait_link(self, url: str) -> None:
         """
         Updates the video panel with the video's title, thumbnail, and file size.
 
         Args:
-            youtube_object (YouTube/Playlist): YouTube or Playlist object from pytube.
+            url (str): URL of YouTube video.
         """
+        if not validators.url(url):
+            self.reset_video_info_panel
+            return
         try:
-            self.video_title.config(text=youtube_object.streams[0].title)
-            self.photo = self.get_thumbnail(youtube_object)
-            self.thumbnail.create_image(1, 1, image=self.photo, anchor='nw')
-            self.file_size.config(text=f"Filesize: {self.get_file_size(youtube_object, 'mp3')}MB (MP3) and {self.get_file_size(youtube_object, 'mp4')}MB (MP4)")
-
-        except:
-            self.reset_video_info_panel()
-
+            options_for_info = {
+                'quiet': True,
+                'extract_flat': True,
+                'skip_download': True,
+                'force_generic_extractor': False
+            }
+            with yt_dlp.YoutubeDL(options_for_info) as ydl:
+                info_of_url = ydl.extract_info(url, download=False)
+                self.current_info = info_of_url
+            
+            # Default Parameters
+            title = "Playlist/Channel"
+            thumbnail_url = None
+            entry_count = info_of_url.get("entry_count")
+            
+            if "entries" in info_of_url and info_of_url["entries"]:
+                title = info_of_url.get("title", title)
+                first_entry = info_of_url["entries"][0]
+                if first_entry:
+                    thumbnail_url = first_entry.get("thumbnail")
+                if not thumbnail_url:
+                    thumbnail_url = info_of_url.get("thumbnail")
+                if entry_count:
+                    title += f"{entry_count} items"
+            elif info_of_url.get("_type", "video") == "video":
+                title = info_of_url.get("thumbnail", "Unknown Title")
+                thumbnail_url = info_of_url["thumbnail"]
+            else:
+                title = info_of_url["title"]
+                thumbnail_url = info_of_url["thumbnail"]
+            #TODO: Continue
+            self.window.after(0, self.upd)
     def start_convert(self):
         """
         Starts the conversion process thread.
