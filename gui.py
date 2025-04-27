@@ -1,79 +1,112 @@
+import os
+import time
+import validators
+import webbrowser
+import yt_dlp
+import urllib.request
+import tkinter as tk
 from tkinter import filedialog, BooleanVar, ttk, messagebox
 from threading import Thread
 from PIL import Image, ImageTk
 from io import BytesIO
-from urllib.parse import urlparse
-import yt_dlp
-import urllib.request
-import time
-import tkinter as tk
-import os
-import webbrowser
-import validators
-import string
-import re
+
+from utils import strip_ansi, is_youtube_url
+from estimator import estimate_size
 
 class GUI:
     def __init__(self) -> None:
-        """
-        Initializes the GUI window.
-        """
-        # Info
+        self._init_state()
+        self._setup_window()
+        self._create_widgets()
+        self._layout_widgets()
+        self._bind_events()
+
+        # Kick off the initial quality menu
+        self.update_quality_options()
+
+    # ─── Initialization helpers ─────────────────────────────────────────────
+
+    def _init_state(self):
+        """Initialize all the instance variables and caches."""
         self.version = '2.1.0'
+        self.window = None
+        self.current_info = None
+        self.size_cache: dict[tuple[str,bool,str], int] = {}
+
+        self.in_link_entry = None
+        self.photo = None
+        self.is_mp3 = None
+        self.quality_var = None
+
+        # widget placeholders
+        self.link = self.link_status = self.selection = None
+        self.quality_label = self.filesize_label = None
+        self.directory = self.filename_label = None
+        self.status_text = self.download_status = self.video_title = None
+        self.in_link = self.in_directory = self.filename_entry = None
+        self.mp3_butt = self.mp4_butt = None
+        self.quality_menu = None
+        self.browse = self.convert = None
+        self.pb = self.thumbnail = None
+
+    def _setup_window(self):
+        """Configure the main Tk window."""
         self.window = tk.Tk()
         self.window.title(f"Youtube to MP3/MP4 V{self.version}")
         self.window.minsize(550, 320)
 
-        #misc
-        self.current_info = None
-        self.size_cache: dict[tuple[str,bool,str], int] = {}
-        # State
+    # ─── Widget creation ────────────────────────────────────────────────────
+
+    def _create_widgets(self):
+        """Instantiate all Labels, Entries, Buttons, etc."""
+        # stateful vars
         self.in_link_entry = tk.StringVar()
-        self.photo = None
-        self.current_info = None
-        self.is_mp3 = BooleanVar(value=True)
+        self.is_mp3        = BooleanVar(value=True)
+        self.quality_var   = tk.StringVar(value='Medium')
 
-        # --- Labels ---
-        self.link         = tk.Label(self.window, text="YouTube Link:",   font=('Helvetica',12,'bold'))
+        # Labels
+        f_bold = ('Helvetica',12,'bold')
+        self.link         = tk.Label(self.window, text="YouTube Link:",   font=f_bold)
         self.link_status  = tk.Label(self.window, text="Waiting for link...", font=('Helvetica',10), fg='gray')
-        self.selection    = tk.Label(self.window, text="Preferred Output", font=('Helvetica',12,'bold'))
-        self.quality_label= tk.Label(self.window, text="Audio Quality",    font=('Helvetica',12,'bold'))
+        self.selection    = tk.Label(self.window, text="Preferred Output", font=f_bold)
+        self.quality_label= tk.Label(self.window, text="Audio Quality",    font=f_bold)
         self.filesize_label = tk.Label(self.window, text="",               font=('Helvetica',10))
-        self.directory    = tk.Label(self.window, text="Directory",        font=('Helvetica',12,'bold'))
-        self.filename_label = tk.Label(self.window, text="Filename",       font=('Helvetica',12,'bold'))
-        self.status_text  = tk.Label(self.window, text="Idle",             font=('Helvetica',12,'bold'))
+        self.directory    = tk.Label(self.window, text="Directory",        font=f_bold)
+        self.filename_label = tk.Label(self.window, text="Filename",       font=f_bold)
+        self.status_text  = tk.Label(self.window, text="Idle",             font=f_bold)
         self.download_status = tk.Label(self.window, font=('Helvetica',10), wraplength=250)
-        self.video_title  = tk.Label(self.window, text="",                 font=('Helvetica',12,'bold'))
+        self.video_title  = tk.Label(self.window, text="",                 font=f_bold)
 
-        # --- Inputs ---
+        # Inputs
         self.in_link        = tk.Entry(self.window, textvariable=self.in_link_entry, width=40)
         self.in_directory   = tk.Entry(self.window, width=40)
         self.filename_entry = tk.Entry(self.window, width=40)
 
-        # --- Radio Buttons ---
-        self.mp3_butt = tk.Radiobutton(self.window, text="MP3", variable=self.is_mp3, value=True,  font=('Helvetica',12,'bold'))
-        self.mp4_butt = tk.Radiobutton(self.window, text="MP4", variable=self.is_mp3, value=False, font=('Helvetica',12,'bold'))
+        # Radio Buttons
+        self.mp3_butt = tk.Radiobutton(self.window, text="MP3", variable=self.is_mp3, value=True,  font=f_bold)
+        self.mp4_butt = tk.Radiobutton(self.window, text="MP4", variable=self.is_mp3, value=False, font=f_bold)
 
-        # --- Quality OptionMenu ---
-        self.quality_var  = tk.StringVar(value='Medium')
-        # supply at least one entry so __init__ is happy; we'll rebuild it immediately
+        # Quality menu: start with dummy options, will regenerate
         initial_opts     = ('Low','Medium','High')
         self.quality_menu = tk.OptionMenu(self.window, self.quality_var, *initial_opts)
         self.quality_menu.config(width=10)
 
-        # --- Buttons & Progress ---
-        self.browse  = tk.Button(self.window, text="Browse",  command=self.get_dir,       font=('Helvetica',12,'bold'))
-        self.convert = tk.Button(self.window, text="Convert", command=self.start_convert, font=('Helvetica',12,'bold'))
+        # Buttons & progress
+        self.browse  = tk.Button(self.window, text="Browse",  command=self.get_dir,       font=f_bold)
+        self.convert = tk.Button(self.window, text="Convert", command=self.start_convert, font=f_bold)
         self.pb      = ttk.Progressbar(self.window, orient="horizontal", mode='indeterminate', length=250)
         self.thumbnail = tk.Canvas(self.window, width=400, height=200)
 
-        # --- Layout ---
+    # ─── Layout ─────────────────────────────────────────────────────────────
+
+    def _layout_widgets(self):
+        """Place everything on a grid."""
         # Row 0
         self.link.grid(        row=0, column=0, padx=5, pady=5, sticky='w')
         self.in_link.grid(     row=0, column=1, padx=5, pady=5)
         self.video_title.grid( row=0, column=2, padx=5, pady=5)
 
-        # Row 1: link status
+        # Row 1
         self.link_status.grid( row=1, column=0, columnspan=2, pady=(0,10))
 
         # Row 2
@@ -84,13 +117,12 @@ class GUI:
         self.mp3_butt.grid(    row=3, column=0, padx=5, pady=5)
         self.mp4_butt.grid(    row=3, column=1, padx=5, pady=5)
 
-        # Row 4
+        # Row 4–5
         self.quality_label.grid(row=4, column=0, padx=5, pady=5)
         self.quality_menu.grid(row=4, column=1, padx=5, pady=5)
-        # Row 5
         self.filesize_label.grid(row=5, column=0, columnspan=2, padx=5, pady=(0,10))
 
-        # Row 6
+        # Row 6–7
         self.directory.grid(   row=6, column=0, columnspan=2, padx=5, pady=5)
         self.browse.grid(      row=7, column=0, padx=5, pady=5)
         self.in_directory.grid(row=7, column=1, padx=5, pady=5)
@@ -109,11 +141,13 @@ class GUI:
         # Row 11
         self.download_status.grid(row=11, column=0, columnspan=2, pady=5)
 
-        # --- Traces & Bindings ---
+    # ─── Event bindings ────────────────────────────────────────────────────
+
+    def _bind_events(self):
+        """Connect traces and combobox selections."""
         self.quality_var.trace_add('write', lambda *a: self._refresh_quality_menu())
         self.in_link_entry.trace_add('write', lambda *a: self.start_wait_link_thread())
         self.is_mp3.trace_add('write',    lambda *a: self.update_quality_options())
-        self.update_quality_options()
 
     def get_thumbnail(self, thumbnail_url: str) -> ImageTk.PhotoImage:
         """
@@ -147,36 +181,30 @@ class GUI:
         Updates the video panel with the video's title, thumbnail, and drives
         the link status sequence (verify → fetch → fetched).
         """
-        # 1) Empty? back to waiting
-        # 1) No URL yet?
         if not url:
             self.window.after(0, lambda: self.link_status.config(text="Waiting for link..."))
             self.window.after(0, self.reset_video_info_panel)
             return
-
-        # 2) Verifying
+        
         self.window.after(0, lambda: self.link_status.config(text="Verifying link..."))
 
-        # 3) Is it syntactically a URL?
         if not validators.url(url):
             self.window.after(0, lambda: self.link_status.config(text="Please enter a valid link."))
             self.window.after(3000, lambda: self.link_status.config(text="Waiting for link..."))
             self.window.after(0, self.reset_video_info_panel)
             return
-
-        # 4) Is it actually a YouTube URL?
+    
         if not self._is_youtube_url(url):
             self.window.after(0, lambda: self.link_status.config(text="Please enter a valid YouTube link."))
             self.window.after(3000, lambda: self.link_status.config(text="Waiting for link..."))
             self.window.after(0, self.reset_video_info_panel)
             return
 
-        # 5) Looks good!
         self.window.after(0, lambda: self.link_status.config(text="Link correct..."))
-        # after 1s switch to “Fetching…”
+
         self.window.after(1000, lambda: self.link_status.config(text="Fetching link..."))
 
-        # 6) Pull metadata
+
         opts = {'quiet': True, 'skip_download': True, 'extract_flat': False}
         try:
             with yt_dlp.YoutubeDL(opts) as ydl:
@@ -185,7 +213,6 @@ class GUI:
             self.window.after(0, lambda: self.link_status.config(text="Error fetching link."))
             return
 
-        # 7) Display title + thumbnail
         self.current_info = info
         title = info.get('title', '')
         thumb = info.get('thumbnail')
@@ -198,8 +225,8 @@ class GUI:
                     self.thumbnail.create_image(0,0,anchor='nw',image=self.photo)
         self.window.after(0, upd)
         self.current_info = info
-        self.size_cache.clear()    # <-- flush old entries
-        # 8) Done
+        self.size_cache.clear()   
+        
         self.window.after(0, self._refresh_quality_menu)
         self.window.after(0, self.update_filesize_display)
         self.window.after(0, lambda: self.link_status.config(text="Link fetched!"))
@@ -211,7 +238,6 @@ class GUI:
         self.photo = None
         self.thumbnail.delete('all')
         self.current_info = None
-        # also clear filesize
         self.filesize_label.config(text="")
 
     def update_quality_options(self, *args):
@@ -266,13 +292,13 @@ class GUI:
         for w in to_change:
             w.config(state=state)
     
-    @staticmethod
-    def _strip_ansi(s: str) -> str:
-        """
-        Removes ANSI‐style escape sequences (e.g. '\x1b[0;94m') from a string.
-        """
-        ansi_re = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
-        return ansi_re.sub('', s)
+    def _strip_ansi(self, s: str) -> str:
+        # delegate to utils
+        return strip_ansi(s)
+
+    def _is_youtube_url(self, url: str) -> bool:
+        # delegate to utils
+        return is_youtube_url(url)
     
     def yt_dlp_hook(self, d: dict):
         """
@@ -299,65 +325,43 @@ class GUI:
     def update_filesize_display(self, *args):
         """
         Kicks off a background metadata-only size estimation
-        so it will always be correct — but reuses any previously cached result.
+        so it will always be correct—but reuses any cached result.
         """
         url     = self.in_link_entry.get().strip()
         to_mp3  = self.is_mp3.get()
         quality = self.quality_var.get()
         key     = (url, to_mp3, quality)
 
-        # no URL? blank out
         if not url:
             return self.filesize_label.config(text="")
 
-        # cache hit → instant update
+        # cache hit
         if key in self.size_cache:
             mb = self.size_cache[key] / (1024*1024)
             return self.filesize_label.config(text=f"Estimated size: {mb:.2f} MB")
 
-        # cache miss → show placeholder & fire off thread
+        # cache miss
         self.filesize_label.config(text="Estimating size…")
         Thread(
-            target=self._estimate_and_update_size,
-            args=(url, to_mp3, quality)
+            target=self._cache_and_update_size,
+            args=(url, to_mp3, quality),
+            daemon=True
         ).start()
-
-    def _estimate_and_update_size(self, url: str, is_mp3: bool, quality: str):
+    def _cache_and_update_size(self, url: str, is_mp3: bool, quality: str):
         """
-        Background thread: runs yt_dlp.extract_info with the same format
-        string we’d use to download, then sums the requested_formats sizes
-        and updates the label.
+        Background thread: uses estimator.estimate_size(),
+        caches the result, and updates the label.
         """
-        # build the same format specifier you use for download
-        if is_mp3:
-            fmt = 'bestaudio/best'
-        else:
-            height_map = {'480p':480, '720p':720, '1080p':1080, '4K':2160}
-            max_h = height_map.get(quality, 720)
-            fmt = f'bestvideo[height<={max_h}]+bestaudio/best'
-
-        ydl_opts = {
-            'quiet': True,
-            'skip_download': True,
-            'noplaylist': True,
-            'format': fmt,
-        }
-
         try:
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(url, download=False)
+            total = estimate_size(url, is_mp3, quality)
         except Exception:
-            self.window.after(0, lambda: self.filesize_label.config(text="Size unknown"))
+            # on failure, show unknown
+            self.window.after(0, lambda:
+                self.filesize_label.config(text="Size unknown")
+            )
             return
 
-        total = 0
-        if 'requested_formats' in info:
-            for f in info['requested_formats']:
-                total += f.get('filesize') or f.get('filesize_approx') or 0
-        else:
-            total = info.get('filesize') or info.get('filesize_approx') or 0
-
-        # *** cache it ***
+        # store in memory cache
         key = (url, is_mp3, quality)
         self.size_cache[key] = total
 
@@ -366,16 +370,7 @@ class GUI:
             self.filesize_label.config(text=f"Estimated size: {mb:.2f} MB")
         )
 
-    @staticmethod
-    def _is_youtube_url(url: str) -> bool:
-        """
-        Returns True if the URL’s hostname is youtube.com or youtu.be.
-        """
-        try:
-            net = urlparse(url).netloc.lower()
-            return 'youtube.com' in net or 'youtu.be' in net
-        except:
-            return False
+
     def _refresh_quality_menu(self):
         """
         Rebuild the Quality menu, disabling any entries
