@@ -1,4 +1,4 @@
-# YouTube Downloader GUI
+# yt2mp3mp4
 
 A simple and user-friendly desktop application for downloading YouTube videos as MP4 or audio as MP3, with quality selection and filesize estimation.
 
