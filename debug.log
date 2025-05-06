@@ -1,0 +1,86 @@
+[2025-05-07 02:09:46.190] --- Log Session Start: 2025-05-07 02:09:46.190 ---
+[2025-05-07 02:09:46.191] Logging to: c:\Users\Ck\OneDrive\Programs\yt2mp3\debug.log
+[2025-05-07 02:09:46.195] YoutubeDownloaderApp __init__ (Version: 3.0.1) started.
+[2025-05-07 02:09:46.196] Setting up main window.
+[2025-05-07 02:09:46.274] Main window setup finished.
+[2025-05-07 02:09:46.274] Initializing state variables.
+[2025-05-07 02:09:46.274] Ensured output directory exists: C:\Users\Ck\Documents\YouTube Downloads
+[2025-05-07 02:09:46.274] State variables initialized.
+[2025-05-07 02:09:46.274] Creating widgets.
+[2025-05-07 02:09:46.284] Widgets created.
+[2025-05-07 02:09:46.284] Laying out widgets.
+[2025-05-07 02:09:46.284] Binding events.
+[2025-05-07 02:09:46.285] Updating quality options UI. Format: MP3
+[2025-05-07 02:09:46.285] Populating quality menu. Options: [('Low', '96', False), ('Medium', '192', False), ('High', '320', False)]
+[2025-05-07 02:09:46.285] Quality selection changed to: 'Medium'
+[2025-05-07 02:09:46.285] Quality menu populated. Selected quality: 'Medium'
+[2025-05-07 02:09:46.285] YoutubeDownloaderApp __init__ finished.
+[2025-05-07 02:09:46.285] Starting YouTube Downloader GUI main event loop.
+[2025-05-07 02:09:56.848] Link entry changed. Processing URL: 'https://www.youtube.com/watch?v=4OK2LcYiKCo'
+[2025-05-07 02:09:56.848] Async processing link: 'https://www.youtube.com/watch?v=4OK2LcYiKCo'
+[2025-05-07 02:09:56.855] Fetching metadata for: 'https://www.youtube.com/watch?v=4OK2LcYiKCo' (blocking call)
+[2025-05-07 02:09:59.040] Updating quality options UI. Format: MP4
+[2025-05-07 02:09:59.102] Populating quality menu. Options: [('480p', '480', False), ('720p', '720', False), ('1080p', '1080', False), ('4K', '2160', False)]
+[2025-05-07 02:09:59.443] Quality selection changed to: '720p'
+[2025-05-07 02:09:59.553] Quality menu populated. Selected quality: '720p'
+[2025-05-07 02:10:00.631] Metadata fetched successfully for: 'https://www.youtube.com/watch?v=4OK2LcYiKCo'
+[2025-05-07 02:10:00.631] Updating UI with video info. Title: 'Tariffs Explained with Bananas'
+[2025-05-07 02:10:00.631] Fetching thumbnail: https://i.ytimg.com/vi_webp/4OK2LcYiKCo/maxresdefault.webp
+[2025-05-07 02:10:00.632] Updating quality options UI. Format: MP4
+[2025-05-07 02:10:00.648] Available Video Heights: [144, 240, 360, 480, 720, 1080]
+[2025-05-07 02:10:00.648] Populating quality menu. Options: [('480p', '480', True), ('720p', '720', True), ('1080p', '1080', True), ('4K', '2160', False)]
+[2025-05-07 02:10:00.690] Quality selection changed to: '720p'
+[2025-05-07 02:10:00.690] Async filesize estimation for: URL='https://www.youtube.com/watch?v=4OK2LcYiKCo', MP3=False, QualityKey='720p'
+[2025-05-07 02:10:00.692] Worker thread: Estimating size for QualityLabel='720p'
+[2025-05-07 02:10:00.692] --- Size Estimation (Estimator v4.1.1_docstrings) ---
+[2025-05-07 02:10:00.693] Input: url='https://www.youtube.com/watch?v=4OK2LcYiKCo', is_mp3=False, quality_param='720'
+[2025-05-07 02:10:00.693] Format string for yt-dlp: 'bestvideo[height<=720]+bestaudio/best[height<=720]/best'
+[2025-05-07 02:10:00.693] Quality menu populated. Selected quality: '720p'
+[2025-05-07 02:10:00.738] Async link processing finished for: 'https://www.youtube.com/watch?v=4OK2LcYiKCo'
+[2025-05-07 02:10:01.203] Quality selection changed to: '1080p'
+[2025-05-07 02:10:01.204] Async filesize estimation for: URL='https://www.youtube.com/watch?v=4OK2LcYiKCo', MP3=False, QualityKey='1080p'
+[2025-05-07 02:10:01.204] Worker thread: Estimating size for QualityLabel='1080p'
+[2025-05-07 02:10:01.204] --- Size Estimation (Estimator v4.1.1_docstrings) ---
+[2025-05-07 02:10:01.204] Input: url='https://www.youtube.com/watch?v=4OK2LcYiKCo', is_mp3=False, quality_param='1080'
+[2025-05-07 02:10:01.204] Format string for yt-dlp: 'bestvideo[height<=1080]+bestaudio/best[height<=1080]/best'
+[2025-05-07 02:10:03.465] Video duration: 334s. Total available formats: 47.
+[2025-05-07 02:10:03.465] Processing 2 'requested_formats':
+[2025-05-07 02:10:03.465]   - Req.Format 0 (ID: 398, v:av01.0.05M.08, a:none, h:720, vbr:192.007, abr:0, size:8022694, approx:8022676)
+[2025-05-07 02:10:03.465]   - Req.Format 0 (ID: 398): CHOSEN_SIZE=8022694 (from filesize)
+[2025-05-07 02:10:03.465]   - Req.Format 1 (ID: 251, v:none, a:opus, h:None, vbr:0, abr:136.729, size:5713616, approx:5713580)
+[2025-05-07 02:10:03.465]   - Req.Format 1 (ID: 251): CHOSEN_SIZE=5713616 (from filesize)
+[2025-05-07 02:10:03.465] Estimator: Final estimated size: 13736310 bytes, Incomplete: False
+[2025-05-07 02:10:03.466] Estimation complete: 13736310 bytes, Incomplete: False. Cached.
+[2025-05-07 02:10:04.297] Initiating conversion: URL='https://www.youtube.com/watch?v=4OK2LcYiKCo', MP3=False, Quality='1080p', Dir='C:\Users\Ck\Documents\YouTube Downloads', Filename=''
+[2025-05-07 02:10:04.359] Conversion worker thread started.
+[2025-05-07 02:10:04.844] Progress bar: Indeterminate (Preparing).
+[2025-05-07 02:10:04.844] Target output file: 'C:\Users\Ck\Documents\YouTube Downloads\Tariffs Explained with Bananas.mp4'
+[2025-05-07 02:10:04.844] File 'C:\Users\Ck\Documents\YouTube Downloads\Tariffs Explained with Bananas.mp4' exists. Prompting user.
+[2025-05-07 02:10:04.847] Progress bar: Indeterminate (Waiting for user overwrite).
+[2025-05-07 02:10:05.659] Video duration: 334s. Total available formats: 47.
+[2025-05-07 02:10:05.659] Processing 2 'requested_formats':
+[2025-05-07 02:10:05.659]   - Req.Format 0 (ID: 616, v:vp09.00.40.08, a:none, h:1080, vbr:4629.721, abr:0, size:None, approx:None)
+[2025-05-07 02:10:05.660]     - INFO (Req.Format 0, ID: 616): No direct size. Heuristic required.
+[2025-05-07 02:10:05.660]     - Video Component (ID: 616). Target height: 1080.
+[2025-05-07 02:10:05.660]       - H264_PROXY: Found (ID: 270, vbr: 3007.281)
+[2025-05-07 02:10:05.660]   >>> HEURISTIC CALC (ID: 270). Duration: 334.00s, Bitrate: 3007.281kbps. Estimated bytes: 125553981.
+[2025-05-07 02:10:05.660]     >>> Using H.264 Proxy: heuristic (H264_Proxy_VBR @ 3007.281kbps), Size: 125553981
+[2025-05-07 02:10:05.660]   - Req.Format 0 (ID: 616): CHOSEN_SIZE=125553981 (from heuristic (H264_Proxy_VBR @ 3007.281kbps))
+[2025-05-07 02:10:05.660]   - Req.Format 1 (ID: 251, v:none, a:opus, h:None, vbr:0, abr:136.729, size:5713616, approx:5713580)
+[2025-05-07 02:10:05.660]   - Req.Format 1 (ID: 251): CHOSEN_SIZE=5713616 (from filesize)
+[2025-05-07 02:10:05.660] Estimator: Final estimated size: 131267597 bytes, Incomplete: True
+[2025-05-07 02:10:05.660] Estimation complete: 131267597 bytes, Incomplete: True. Cached.
+[2025-05-07 02:10:06.572] Deleted existing file for overwrite.
+[2025-05-07 02:10:06.572] Building ydl_opts: mp3=False, q_param='1080' (from '1080p'), noplaylist=True
+[2025-05-07 02:10:14.649] yt-dlp hook: 'finished'.
+[2025-05-07 02:10:15.150] yt-dlp hook: 'finished'.
+[2025-05-07 02:10:15.338] Verified final file: 'C:\Users\Ck\Documents\YouTube Downloads\Tariffs Explained with Bananas.mp4', Size: 33.41 MB
+[2025-05-07 02:10:15.339] Discrepancy noted: Note: Initial rough estimate (~125.19 MB) differed significantly from actual size. This can happen with some videos.
+[2025-05-07 02:10:18.408] Attempting to open directory: C:\Users\Ck\Documents\YouTube Downloads
+[2025-05-07 02:10:18.503] Finalizing conversion UI. Status before reset: 'Conversion Complete!'
+[2025-05-07 02:10:18.503] Progress bar: Indeterminate (post-success visual cue).
+[2025-05-07 02:10:18.510] Scheduling final UI reset to Idle in 3000ms.
+[2025-05-07 02:10:21.518] Executing scheduled UI reset to Idle state.
+[2025-05-07 02:10:21.519] Progress bar: Reset to empty determinate for Idle state.
+[2025-05-07 02:10:30.945] Application window closing sequence initiated by user.
+[2025-05-07 02:10:30.967] --- Log Session End: 2025-05-07 02:10:30.967 ---

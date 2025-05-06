@@ -12,3 +12,4 @@ To install, directly download the repository using git clone.
 ```batch
 python run.py
 ```
+The minimum version is Python 3.10.
