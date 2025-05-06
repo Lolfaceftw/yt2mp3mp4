@@ -51,7 +51,7 @@ This application is written in Python and requires a few dependencies.
 2.  **Navigate to the Project Directory:**
     Open your terminal or command prompt and navigate to the folder where you placed the project files (e.g., `yt2mp3`).
     ```bash
-    cd path/to/your/project/yt2mp3
+    cd path/to/your/project/yt2mp3mp4
     ```
 
 3.  **Create a Virtual Environment (Recommended):**
