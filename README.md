@@ -4,9 +4,6 @@ A simple and user-friendly desktop application for downloading YouTube videos as
 
 **Current Version:** `3.0.1` (Corresponds to `config.APP_VERSION`)
 
-![Screenshot Placeholder](placeholder.png) 
-*(Suggestion: Replace `placeholder.png` with an actual screenshot of your application's GUI once it's stable)*
-
 ## Features
 
 *   Download YouTube videos in MP4 format.
