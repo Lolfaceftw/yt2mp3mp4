@@ -43,8 +43,8 @@ This application is written in Python and requires a few dependencies.
 1.  **Clone or Download the Repository:**
     If this project is hosted on a Git repository (e.g., GitHub):
     ```bash
-    git clone <repository_url>
-    cd <repository_directory_name>
+    git clone https://github.com/Lolfaceftw/yt2mp3mp4
+    cd yt2mp3mp4
     ```
     Alternatively, download the project files (e.g., as a ZIP) and extract them to a folder on your computer.
 
@@ -86,11 +86,11 @@ This application is written in Python and requires a few dependencies.
 ## Usage
 
 1.  **Ensure your virtual environment is activated** (if you created one):
-    *   Windows: `path\to\your\project\yt2mp3\.venv\Scripts\activate`
-    *   macOS/Linux: `source path/to/your/project/yt2mp3/.venv/bin/activate`
+    *   Windows: `path\to\your\project\yt2mp3mp4\.venv\Scripts\activate`
+    *   macOS/Linux: `source path/to/your/project/yt2mp3mp4/.venv/bin/activate`
 
 2.  **Run the Application:**
-    From the project's root directory (e.g., `yt2mp3`), execute:
+    From the project's root directory (e.g., `yt2mp3mp4`), execute:
     ```bash
     python run.py
     ```
@@ -142,77 +142,3 @@ The project is organized into several Python files:
     *   Make sure Tkinter is properly installed with your Python distribution. This is usually standard, but on some Linux systems, you might need to install it separately (e.g., `sudo apt install python3-tk`).
 *   **Debug Log:** If you encounter issues, the `debug.log` file (created in the same directory as the scripts when `DEBUG_MODE` is `True` in `config.py`) can provide detailed information about the application's operations and any errors.
 
-## Contributing
-
-(Placeholder - Add guidelines if you plan for others to contribute)
-Currently, this is a personal project. If you find bugs or have suggestions, feel free to [open an issue](<link_to_your_issue_tracker_if_any>).
-
-## License
-
-(Placeholder - Choose a license, e.g., MIT, GPL)
-This project is unlicensed / Specify your license here.
-
----
-
-This README provides a good starting point. Remember to:
-1.  **Replace `placeholder.png`** with an actual screenshot.
-2.  Update `<repository_url>` and `<repository_directory_name>` if you host it on Git.
-3.  Fill in the "Contributing" and "License" sections as appropriate for your project.
-4.  Keep the version number in sync with `config.APP_VERSION`.
-5.  If you re-introduce `gui_widgets.py` more formally, update the "Project Structure" section.```
-    This will launch the `gui.py` script, which is the main application window.
-
-3.  **Using the GUI:**
-    *   **YouTube Link:** Paste the full URL of the YouTube video you want to download. The application will attempt to fetch video information (title, thumbnail).
-    *   **Preferred Output:**
-        *   **MP3 Audio:** Select this to extract audio and convert it to MP3.
-        *   **MP4 Video:** Select this to download the video.
-    *   **Quality:**
-        *   Based on your output choice, a quality dropdown will be populated.
-        *   For MP3, this refers to the target bitrate (e.g., 192 kbps).
-        *   For MP4, this refers to the maximum video resolution (e.g., 720p, 1080p). Options are only enabled if the source video offers that quality or higher.
-    *   **Filesize Estimate:** After selecting a quality, an estimated filesize will be displayed.
-        *   `Est. size:` - Based on direct information, usually accurate.
-        *   `Rough est: ~` - Based on bitrate calculations, can vary significantly.
-        *   `Size: Unknown` - Information couldn't be determined.
-    *   **Save to Directory:** Shows the current output directory. Click "Browse..." to choose a different folder.
-    *   **Filename (optional):** You can specify a custom filename (without extension). If left blank, the video's title will be used.
-    *   **Download & Convert:** Click this button to start the process.
-        *   The progress bar will indicate activity. If download percentage is available, it will fill up, and the percentage will be shown below it.
-        *   Status messages will update you on the progress.
-    *   **File Exists Prompt:** If the target output file already exists, you will be prompted to either overwrite it or skip the download.
-    *   **Completion:** Upon successful download, a message will confirm, and the output folder should open automatically.
-
-## Project Structure
-
-The project is organized into several Python files:
-
-*   **`run.py`**: The main entry point. Handles Python version checks and dependency management before launching the GUI.
-*   **`gui.py`**: Contains the main `YoutubeDownloaderApp` class, which defines the entire graphical user interface, event handling, and orchestrates the download process.
-*   **`config.py`**: Stores all application-wide constants and settings (e.g., version, fonts, quality lists, default paths). This makes customization easier.
-*   **`logger.py`**: Provides a simple singleton logger for logging messages to the console and a `debug.log` file (if `DEBUG_MODE` is True in `config.py`).
-*   **`utils.py`**: Contains general utility functions used across the application (e.g., `sanitize_filename`, `is_youtube_url`, `get_default_output_dir`, `strip_ansi`).
-*   **`estimator.py`**: Handles the logic for estimating video/audio filesize before download, using direct metadata or bitrate-based heuristics.
-*   **`gui_tooltip.py`**: A simple class to create and manage tooltips for GUI widgets.
-*   **`gui_widgets.py`** (If used, based on previous refactoring iterations): Could contain helper functions to create logical groups of UI widgets, aiming to make `gui.py` cleaner. *(Note: The current iteration of `gui.py` might be creating widgets directly if the horizontal layout was prioritized over this specific modularization step).*
-
-## Troubleshooting
-
-*   **"FFmpeg not found" error during MP3 conversion:** Ensure FFmpeg is installed correctly and its `bin` directory (containing `ffmpeg.exe` or `ffmpeg`) is added to your system's PATH environment variable. Restart your terminal/command prompt after updating PATH.
-*   **Download errors / "Video unavailable":**
-    *   Check if the YouTube link is correct and the video is publicly accessible.
-    *   Your internet connection might be down.
-    *   `yt-dlp` might need an update if YouTube changes its site structure. You can try updating it within your virtual environment: `pip install --upgrade yt-dlp`
-*   **GUI doesn't start / Tkinter errors:**
-    *   Ensure you have a compatible Python version (3.10+).
-    *   Make sure Tkinter is properly installed with your Python distribution. This is usually standard, but on some Linux systems, you might need to install it separately (e.g., `sudo apt install python3-tk`).
-*   **Debug Log:** If you encounter issues, the `debug.log` file (created in the same directory as the scripts when `DEBUG_MODE` is `True` in `config.py`) can provide detailed information about the application's operations and any errors.
-
----
-
-This README provides a good starting point. Remember to:
-1.  **Replace `placeholder.png`** with an actual screenshot.
-2.  Update `<repository_url>` and `<repository_directory_name>` if you host it on Git.
-3.  Fill in the "Contributing" and "License" sections as appropriate for your project.
-4.  Keep the version number in sync with `config.APP_VERSION`.
-5.  If you re-introduce `gui_widgets.py` more formally, update the "Project Structure" section.
